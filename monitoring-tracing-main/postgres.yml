@@ -1,5 +1,5 @@
 ---
-- hosts: psql
+- hosts: localhost
   vars:
     db_user: lcbo
     db_name: lcbo
