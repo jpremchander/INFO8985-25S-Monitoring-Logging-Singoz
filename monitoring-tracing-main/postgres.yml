@@ -1,0 +1,74 @@
+---
+- hosts: psql
+  vars:
+    db_user: lcbo
+    db_name: lcbo
+    db_password: Secret5555
+  tasks:
+  - name: Install dependencies for PostgreSQL
+    apt: name={{ item }} update_cache=true state=latest
+    with_items:
+    - bash
+    - openssl
+    - libssl-dev
+    - libssl-doc
+    - strace
+  - name: Install PostgreSQL 
+    apt: name={{ item }} update_cache=true state=present
+    with_items:
+    - postgresql
+    - postgresql-contrib
+    - libpq-dev
+  - name: Install psycopg2 python package
+    ansible.builtin.pip:
+      name: psycopg2
+  - name: Ensure the PostgreSQL service is running
+    service: name=postgresql state=started enabled=yes    
+  - name: Create the database specified in vars
+    become: true
+    become_user: postgres
+    postgresql_db: name={{ db_name }}
+      template='template0'
+      state=present
+  - name: Ensure user has access to the new database
+    become: true
+    become_user: postgres
+    postgresql_user: db={{ db_name }}
+          name={{ db_user }}
+          password={{ db_password }}
+          state=present
+  - name: Ensure user does not have unnecessary permissions
+    become: true
+    become_user: postgres
+    postgresql_user: name={{ db_user }}
+         role_attr_flags=NOSUPERUSER,NOCREATEDB
+         state=present
+  - name: Creates pgadmin directory
+    ansible.builtin.file:
+      path: /var/lib/pgadmin
+      state: directory
+      owner: vscode
+  - name: Creates pgadmin log directory
+    ansible.builtin.file:
+      path: /var/log/pgadmin
+      state: directory
+      owner: vscode
+  - name: Install pgadmin4 python package
+    ansible.builtin.pip:
+      name: pgadmin4
+  - name: Add a line to config.py
+    ansible.builtin.lineinfile:
+      path: /usr/local/lib/python3.12/site-packages/pgadmin4/config_distro.py
+      line: WTF_CSRF_SSL_STRICT = False
+      create: yes  
+  - name: Download lcbo database
+    shell: "curl -o /tmp/lcboapi.tgz https://heycarsten.s3.amazonaws.com/lcboapi-2019-01-21.tgz && tar -zxvf /tmp/lcboapi.tgz --directory /tmp"
+  - name: Add some dummy data to our database
+    become: true
+    become_user: postgres
+    shell: psql {{ db_name }} < /tmp/lcboapi-2019-01-21.sql
+  - name: GRANT ALL PRIVILEGES ON DATABASE lcbo TO lcbo
+    become: true
+    become_user: postgres
+    shell: psql {{ db_name }} -c "GRANT pg_read_all_data TO lcbo"
+
