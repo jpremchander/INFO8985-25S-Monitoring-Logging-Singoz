@@ -75,3 +75,22 @@ Logs and metrics were successfully collected and displayed in Signoz.
 The otel-collector was correctly configured, and no errors were found in its logs.
 
 No issues were identified in the otel-collector configuration for data collection.
+
+Screenshots:
+
+![alt text](image.png)
+
+Hypothesis:
+There might be a misconfiguration in the otel-collector-config.yaml that prevents Signoz from collecting logs and metrics.
+
+Actions Taken:
+
+Reviewed and confirmed that the receivers, processors, and exporters for logs and metrics are properly configured in otel-collector-config.yaml.
+
+Confirmed signoz-otel-collector is running (docker ps).
+
+Checked collector logs (docker logs signoz-otel-collector) — no major errors found.
+
+Logged in to Signoz at http://localhost:3301 and confirmed logs and metrics are showing up.
+
+Validated the health check endpoint (http://localhost:13133/health) — collector is healthy.
