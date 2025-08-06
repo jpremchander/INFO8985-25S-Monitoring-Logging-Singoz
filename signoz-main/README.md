@@ -1,4 +1,4 @@
-# signoz
+# signoz-main repo branch
 signoz demo with docker-compose 
 
 ```bash
